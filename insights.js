@@ -41,7 +41,7 @@ function renderTracking(){
  for(const r of data.records||[]){if(filter!=='all'&&r.state!==filter)continue;const tr=element('tr');tr.append(element('td',r.event),element('td',date(r.start_utc)),element('td',r.pick+' · '+Number(r.pick_odds).toFixed(2)),element('td',r.basis),element('td',date(r.recorded_utc)));
   const result=element('td');result.append(element('strong',r.state==='confirmed'?(r.hit?'Acertada':'No acertada'):'Pendiente de confirmar'));
   if(r.state==='confirmed'){result.append(element('small',r.score.join('–'),'subline'));const a=element('a','Fuente','source');if(/^https:\/\//.test(r.source_url)){a.href=r.source_url;a.target='_blank';a.rel='noopener noreferrer';result.append(a);}}
-  if(r.state==='pending'&&!staticMode){const button=element('button','Confirmar resultado','row-action');button.onclick=()=>openManualResult(r);result.append(button);}
+  if(r.state==='pending'&&!staticMode){const button=element('button','Confirmar resultado','row-action');button.disabled=Date.parse(r.start_utc)>Date.now();button.title=button.disabled?'Disponible después del inicio, cuando compruebes el resultado final.':'';button.onclick=()=>openManualResult(r);result.append(button);}
   if(r.state==='confirmed'&&r.confirmation_type==='manual')result.append(element('small','Confirmación manual','subline'));
   tr.append(result);body.append(tr);
  }
