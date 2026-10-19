@@ -22,6 +22,8 @@ function historyChart(target,eventId,market){
  const colors={'1':'#ffad75','X':'#d2bdff','2':'#77d5bf'};
  for(const side of sides){const from=first.odds[side],to=last.odds[side];if(!from||!to)continue;const change=to-from;const box=element('div');box.style.borderColor=colors[side];box.append(element('strong',side+' · '+from.toFixed(2)+' a '+to.toFixed(2)),element('small',(change>0?'Subió ':change<0?'Bajó ':'Sin cambio ')+(Math.abs(change/from)*100).toFixed(1)+' %'));legend.append(box);}target.append(legend);
  target.append(element('p',`${points.length} observaciones guardadas · ${date(first.observed_utc)} a ${date(last.observed_utc)} · Chile. Hasta 60 puntos por evento dentro de 90 días. Las nuevas cuotas iguales no duplican puntos.`,'hint'));
+ const current=rows.filter(r=>r.event_id===eventId&&r.market===last.market);
+ if(current.length===Object.keys(last.odds).length&&current.every(r=>Number(r.odds)===last.odds[r.selection])&&Date.parse(current[0]?.observed_utc)>Date.parse(last.observed_utc))target.append(element('p','Comprobadas nuevamente sin cambios el '+date(current[0].observed_utc,true)+' · Chile.','hint'));
  const reading=element('section',null,'insight-box odds-reading');reading.append(element('h3','Cómo leer este cambio'));
  const eventName=first.event||analyses.find(a=>a.event_id===eventId)?.event||'';
  reading.append(element('p',activeSport==='football'?'1 = local · X = empate · 2 = visita.':'1 = primer jugador/equipo · 2 = segundo jugador/equipo.'));
