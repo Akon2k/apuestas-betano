@@ -1,6 +1,19 @@
 'use strict';
 window.insightsData={history:{},tracking:{records:[],summary:{}},sport_status:[]};
 const svgNode=(tag,attributes={})=>{const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attributes))n.setAttribute(k,v);return n;};
+window.oddsReading=function(points,eventName,sport){
+ if(!points.length)return [];
+ const teams=(eventName||'').split(' - '),labels={'1':teams[0]||'Participante 1','X':'Empate','2':teams[1]||'Participante 2'};
+ const first=points[0].odds,last=points.at(-1).odds,keys=['1','X','2'].filter(s=>first[s]>1&&last[s]>1),lines=[];
+ if(points.length===1)return ['Hay una sola observación: aún no se puede saber si las cuotas subieron o bajaron.'];
+ for(const side of keys){const change=last[side]-first[side];lines.push(labels[side]+': '+(Math.abs(change)<1e-8?'la cuota quedó igual entre el primer y el último registro.':change<0?'la cuota bajó; acertar este resultado paga menos por el mismo monto apostado.':'la cuota subió; acertar este resultado paga más por el mismo monto apostado.'));}
+ const complete=Object.keys(first).sort().join()===Object.keys(last).sort().join()&&keys.length===Object.keys(first).length;
+ if(complete){const total=Object.values(last).reduce((n,v)=>n+1/v,0),oldTotal=Object.values(first).reduce((n,v)=>n+1/v,0);const favorite=keys.reduce((best,s)=>last[s]<last[best]?s:best,keys[0]);const tied=keys.filter(s=>Math.abs(last[s]-last[favorite])<1e-8).length>1;
+  if(tied)lines.push('La última captura no tiene un favorito único.');
+  else lines.push('Comparando todas las cuotas y normalizando el margen, '+labels[favorite]+' es el favorito del mercado: pasó de '+(100/first[favorite]/oldTotal).toFixed(1)+' % a '+(100/last[favorite]/total).toFixed(1)+' % de probabilidad implícita.');
+ }
+ lines.push('Esto describe las cuotas entre dos observaciones. No revela cuánto dinero se apostó ni la causa del cambio, y no garantiza el resultado.');return lines;
+};
 function historyChart(target,eventId,market){
  const points=(window.insightsData.history[eventId]||[]).filter(p=>!market||p.market===market);
  if(!points.length){target.append(element('p','Aún no hay capturas históricas de este mercado. Se guardarán con las próximas actualizaciones.','hint'));return;}
@@ -8,7 +21,11 @@ function historyChart(target,eventId,market){
  const first=points[0],last=points.at(-1);const legend=element('div',null,'history-legend');
  const colors={'1':'#ffad75','X':'#d2bdff','2':'#77d5bf'};
  for(const side of sides){const from=first.odds[side],to=last.odds[side];if(!from||!to)continue;const change=to-from;const box=element('div');box.style.borderColor=colors[side];box.append(element('strong',side+' · '+from.toFixed(2)+' a '+to.toFixed(2)),element('small',(change>0?'Subió ':change<0?'Bajó ':'Sin cambio ')+(Math.abs(change/from)*100).toFixed(1)+' %'));legend.append(box);}target.append(legend);
- target.append(element('p',`${points.length} capturas · ${date(first.observed_utc)} a ${date(last.observed_utc)} · Chile. Hasta 120 capturas por evento, separadas por mercado, dentro de los últimos 90 días.`,'hint'));
+ target.append(element('p',`${points.length} observaciones guardadas · ${date(first.observed_utc)} a ${date(last.observed_utc)} · Chile. Hasta 60 puntos por evento dentro de 90 días. Las nuevas cuotas iguales no duplican puntos.`,'hint'));
+ const reading=element('section',null,'insight-box odds-reading');reading.append(element('h3','Cómo leer este cambio'));
+ const eventName=first.event||analyses.find(a=>a.event_id===eventId)?.event||'';
+ reading.append(element('p',activeSport==='football'?'1 = local · X = empate · 2 = visita.':'1 = primer jugador/equipo · 2 = segundo jugador/equipo.'));
+ for(const line of window.oddsReading(points,eventName,activeSport))reading.append(element('p',line));target.append(reading);
  if(points.length===1)target.append(element('p','Solo hay una captura: todavía no se puede mostrar una evolución.','hint'));
  const values=points.flatMap(p=>Object.values(p.odds)),lo=Math.min(...values),hi=Math.max(...values),pad=Math.max((hi-lo)*.12,.1),min=Math.max(1,lo-pad),max=hi+pad;
  const svg=svgNode('svg',{viewBox:'0 0 760 250',role:'img','aria-label':'Evolución de cuotas por fecha de captura',class:'history-chart'});
@@ -32,6 +49,7 @@ window.renderInsights=function(data){
  window.renderHistorySelection();renderTracking();renderStatuses();
 };
 function renderTracking(){
+ renderLeagueEvaluation();
  const data=window.insightsData.tracking,summary=data.summary||{};
  $('results-summary').textContent=`${summary.tracked||0} selecciones registradas · ${summary.confirmed||0} resultados confirmados · ${summary.pending||0} pendientes. Aciertos: ${summary.confirmed?percent(summary.hits/summary.confirmed):'sin resultados suficientes'}.`;
  const evaluation=$('results-evaluation');evaluation.replaceChildren();
@@ -61,3 +79,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{const response=await fetch('/api/result?sport='+activeSport,{method:'POST',headers:{'X-Panel-Token':token,'Content-Type':'application/json'},body:JSON.stringify({event_id:manualRecord.event_id,market:manualRecord.market,start_utc:manualRecord.start_utc,home_score:Number($('result-home').value),away_score:Number($('result-away').value),source_url:$('result-source').value,final:$('result-final').checked})});const data=await response.json();if(!response.ok)throw new Error(data.error||'No se pudo guardar.');$('result-dialog').close();signature=null;await load();}catch(error){$('result-error').textContent=error.message;}finally{button.disabled=false;}
  };
 });
+
+function renderLeagueEvaluation(){
+ const data=window.insightsData.tracking.evaluation||{};const groups=data[$('evaluation-origin').value]||[];
+ for(const [id,key,label] of [['evaluation-league','league','Todas las ligas'],['evaluation-model','basis','Todos los modelos']]){
+  const select=$(id),previous=select.value;select.replaceChildren();const all=element('option',label);all.value='all';select.append(all);
+  for(const value of [...new Set(groups.map(g=>g[key]))].sort()){const option=element('option',value);option.value=value;select.append(option);}
+  if([...select.options].some(o=>o.value===previous))select.value=previous;
+ }
+ const body=$('league-evaluation-rows');body.replaceChildren();
+ for(const g of groups){if($('evaluation-league').value!=='all'&&$('evaluation-league').value!==g.league||$('evaluation-model').value!=='all'&&$('evaluation-model').value!==g.basis)continue;
+  const tr=element('tr'),model=element('td',g.basis);model.append(element('small',g.version,'subline'));
+  const score=v=>v===null?'Sin resultados':v.toFixed(3);
+  tr.append(element('td',g.league),model,element('td',g.confirmed),element('td',g.pending),element('td',g.hit_rate===null?'Sin resultados':percent(g.hit_rate)),element('td',g.hit_interval?percent(g.hit_interval[0])+' a '+percent(g.hit_interval[1]):'Sin resultados'),element('td',score(g.brier)),element('td',score(g.market_brier)),element('td',g.brier_difference===null?'Sin resultados':(g.brier_difference>0?'+':'')+g.brier_difference.toFixed(3)),element('td',g.limited?'Limitada · '+g.confirmed+'/30':'30 o más · descriptiva'));body.append(tr);
+ }
+ if(!body.children.length){const tr=element('tr'),td=element('td','No hay evaluaciones con estos filtros. Aparecerán al registrar selecciones y confirmar sus resultados.','empty');td.colSpan=10;tr.append(td);body.append(tr);}
+}
+document.addEventListener('DOMContentLoaded',()=>{for(const id of ['evaluation-origin','evaluation-league','evaluation-model'])$(id).onchange=renderLeagueEvaluation;});

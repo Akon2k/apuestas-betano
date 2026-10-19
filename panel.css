@@ -62,3 +62,5 @@ table{min-width:1150px}th{padding:16px;font-size:11px;letter-spacing:.35px}td{pa
 #result-form label{display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.7}#result-form p label{display:block}#result-source{display:block;width:100%;margin:12px 0}#result-error{color:#ffb3ab}#result-form .toolbar{margin-top:20px}
 
 .discipline-panel .sport-tabs{grid-template-columns:repeat(3,minmax(0,1fr));max-width:620px}
+
+.evaluation-panel{margin:28px 0;padding:20px;border:1px solid #2b3b52;border-radius:12px}.evaluation-panel .tablewrap{margin-top:18px}.odds-reading p{font-size:13px;line-height:1.8}#install-help{margin:18px 0;padding:14px;border:1px solid #2b3b52;border-radius:9px}#install-help summary{font-size:14px}#install-help p{font-size:13px;line-height:1.8}@media(max-width:500px){.evaluation-panel{padding:12px}}

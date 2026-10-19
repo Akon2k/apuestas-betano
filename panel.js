@@ -46,6 +46,7 @@ function profileCard(name,profile){
  const overall=profile.overall,venue=profile.venue;
  card.append(element('p',`Últimos ${recent.matches}: ${recent.wins}V · ${recent.draws}E · ${recent.losses}D. Promedio: ${recent.scored_per_match.toFixed(2)} goles marcados y ${recent.conceded_per_match.toFixed(2)} recibidos por partido.`,'profile-note'));
  card.append(element('p',`${profile.venue_label}: ${venue.wins}V · ${venue.draws}E · ${venue.losses}D en ${venue.matches} partidos. Goles: ${venue.goals_for} a favor / ${venue.goals_against} en contra.`,'profile-note'));
+ if(typeof venue.clean_sheets==='number')card.append(element('p',`${profile.venue_label}, en esa muestra: ${venue.clean_sheets} partidos sin recibir goles; ${venue.failed_to_score} sin marcar; ${venue.both_scored} con goles de ambos equipos; ${venue.over_2_5} con tres goles o más.`,'profile-note'));
  card.append(element('small',`Muestra general: ${overall.matches} partidos · ${overall.wins}V-${overall.draws}E-${overall.losses}D.`));
  for(const match of [...profile.last_matches].reverse()){const row=element('div',null,'recent-match');const parts=match.date.split('-');row.append(element('span',`${parts[2]}/${parts[1]}`),element('span',`${match.at_home?'Casa':'Fuera'} · ${match.opponent}`),element('b',`${match.goals_for}–${match.goals_against} ${match.result}`));card.append(row);}return card;
 }
@@ -54,6 +55,10 @@ function renderPublicStatistics(content,a,teams){
  const resultDate=value=>['nfl','american_football'].includes(activeSport)?value.slice(0,10).split('-').reverse().join('/'):date(value);
  const note=element('section',null,'insight-box');note.append(element('h3','Resultados recientes · '+info.source_name),element('p',info.period),element('p',info.warning));
  if(info.comparison)note.append(element('p',info.comparison));
+ if(activeSport==='tennis'){
+  if(info.surface){note.append(element('p','Superficie verificada: '+info.surface.label+' · temporada '+info.surface.year+'.'));const link=element('a','Fuente oficial de la superficie','source');link.href=info.surface.source_url;link.target='_blank';link.rel='noopener noreferrer';note.append(link);}
+  else note.append(element('p','Superficie no verificada para este torneo y año. No se presupone ni se mezcla con una superficie inventada.'));
+ }
  note.append(element('p','Estadísticas descriptivas: no modifican los porcentajes del mercado. Consulta: '+date(info.fetched_utc,true)+' · Chile.'));
  if(info.cache_old)note.append(element('p','Datos de hace más de 24 horas. Actualiza antes de interpretarlos.','no-history'));
  content.append(note);const grid=element('div',null,'team-grid');
@@ -63,6 +68,8 @@ function renderPublicStatistics(content,a,teams){
   card.append(element('p',`${p.matches} partidos de muestra: ${p.wins} victorias, ${p.losses} derrotas${p.draws?', '+p.draws+' empates':''}.`));
   if(activeSport==='tennis')card.append(element('p',`Sets: ${p.sets_for} ganados / ${p.sets_against} perdidos.`));
   else card.append(element('p',`Promedio de ${p.unit}: ${p.scored_per_match.toFixed(1)} a favor / ${p.conceded_per_match.toFixed(1)} en contra.`),element('p',`${p.venue_label}: ${p.venue_wins} victorias en ${p.venue_matches} partidos de esta muestra.`));
+  if(p.surface_record){const surface=p.surface_record;card.append(element('p',surface.matches?`${surface.label}: ${surface.wins} victorias y ${surface.losses} derrotas en ${surface.matches} resultados reconocidos sobre esta superficie dentro de la muestra parcial.`:'No hay resultados reconocidos sobre esta superficie en la muestra disponible.'));}
+  if(info.rest?.[i]){const rest=info.rest[i];if(rest.available){card.append(element('p',`Descanso: ${rest.free_days} días de calendario libres entre partidos${rest.back_to_back?' · juega en días consecutivos':''}. Fechas de referencia: Nueva York.`),element('p',`${rest.basis}. Anterior: ${rest.previous_opponent}, ${date(rest.previous_start_utc)} (Chile). ${rest.hours_between_starts} horas entre inicios; no son horas de descanso efectivo ni incluyen viaje.`));}else card.append(element('p',rest.message));}
   card.append(element('small','Último resultado: '+resultDate(p.latest_result)+(['nfl','american_football'].includes(activeSport)?' · fecha de la fuente':' · Chile')));
   for(const match of [...p.last_matches].reverse()){
    const row=element('div',null,'recent-match');row.append(element('span',resultDate(match.date).split(',')[0]),element('span',match.opponent+(match.tournament?' · '+match.tournament:match.at_home?' · Local':' · Visitante')),element('b',`${match.score_for}–${match.score_against} ${match.result}`));card.append(row);
@@ -140,7 +147,7 @@ async function load(){
  }catch{if(requestedSport!==activeSport||requestedDay!==$('day').value)return;$('status').textContent=staticMode?'No se pudo cargar la publicación. Revisa la conexión y vuelve a intentarlo.':'No se pudo conectar al panel. Vuelve a abrir Abrir Betano.';$('status').classList.add('error');refreshState={running:false};renderActivity();}
 }
 async function post(path){const response=await fetch(path,{method:'POST',headers:{'X-Panel-Token':token}});if(!response.ok)throw new Error();await load();}
-$('refresh').onclick=async()=>{if(staticMode){await load();return;}$('refresh').disabled=true;try{await post('/api/refresh?sport='+activeSport);}catch{$('status').textContent='No se pudo iniciar la actualización.';$('refresh').disabled=false;}};
+$('refresh').onclick=async()=>{if(staticMode){window.clearStaticData();await load();return;}$('refresh').disabled=true;try{await post('/api/refresh?sport='+activeSport);}catch{$('status').textContent='No se pudo iniciar la actualización.';$('refresh').disabled=false;}};
 $('combo-build').onclick=async()=>{const minimum=Number($('combo-min').value),maximum=Number($('combo-max').value);if(!Number.isFinite(minimum)||!Number.isFinite(maximum)||minimum<1.5||maximum<minimum||maximum>10){$('combo-status').textContent='El mínimo debe ser al menos 1,50; el máximo debe ser mayor o igual al mínimo y hasta 10.';return;}comboQuery='?'+new URLSearchParams({combo_min:minimum,combo_max:maximum,combo_leg:$('combo-leg').value,combo_legs:$('combo-legs').value});$('combo-build').disabled=true;await load();$('combo-build').disabled=false;};
 for(const button of document.querySelectorAll('[data-tab]'))button.onclick=()=>{for(const tab of document.querySelectorAll('[data-tab]')){const active=tab===button;tab.classList.toggle('active',active);tab.setAttribute('aria-pressed',String(active));$('view-'+tab.dataset.tab).hidden=!active;}};
 $('close-analysis').onclick=()=>$('team-dialog').close();$('team-dialog').addEventListener('click',event=>{if(event.target===$('team-dialog')){const rect=$('team-dialog').getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)$('team-dialog').close();}});
@@ -171,4 +178,4 @@ $('sport-select').onchange=()=>selectSport($('sport-select').value);
 $('show-upcoming').onclick=()=>{$('day').value='upcoming';$('day').dispatchEvent(new Event('change'));};
 $('day').onchange=()=>{rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();window.renderInsights({});signature=null;selectedEvent=null;$('team-dialog').close();sportLabels();render();renderCombos();load();};
 $('download').addEventListener('click',event=>{if(!staticMode)return;event.preventDefault();const fields=['event','competition','start_utc','market','selection','odds','observed_utc'];const csv=[fields,...rows.map(r=>fields.map(k=>r[k]||''))].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=element('a');a.href=url;a.download='cuotas-'+activeSport+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
-$('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);sportLabels();load();setInterval(load,staticMode?60000:2500);setInterval(renderActivity,1000);
+$('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);sportLabels();load();setInterval(load,staticMode?60000:5000);setInterval(renderActivity,1000);

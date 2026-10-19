@@ -1,10 +1,15 @@
 'use strict';
 // Browser-only data adapter. No local endpoints or credentials.
+const publishedCache=new Map();
+window.clearStaticData=()=>publishedCache.clear();
+const chileFormatter=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santiago',year:'numeric',month:'2-digit',day:'2-digit'});
 window.staticData=async function(sport,period){
- const response=await fetch('./datos/'+encodeURIComponent(sport)+'.json',{cache:'no-store'});
- if(!response.ok)throw new Error('Publicación no disponible');
- const payload=await response.json(),now=Date.now();
- const chileDay=value=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santiago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+ let entry=publishedCache.get(sport);const now=Date.now();
+ if(!entry||now-entry.fetched>180000){const response=await fetch('./datos/'+encodeURIComponent(sport)+'.json',{cache:'no-cache'});if(!response.ok)throw new Error('Publicación no disponible');entry={payload:await response.json(),fetched:now,offline:response.headers.get('X-Betano-Offline')==='1'};publishedCache.set(sport,entry);}
+ const payload=entry.payload;
+ const offline=entry.offline||!navigator.onLine;
+ const note=document.getElementById('offline-note');if(note)note.hidden=!offline;
+ const chileDay=value=>chileFormatter.format(new Date(value));
  const upcoming=payload.rows.filter(r=>Date.parse(r.start_utc)>now);
  const selected=payload.rows.filter(r=>period==='all'||Date.parse(r.start_utc)>now&&(period==='upcoming'||chileDay(r.start_utc)===chileDay(now)));
  const ids=new Set(selected.map(r=>r.event_id));
