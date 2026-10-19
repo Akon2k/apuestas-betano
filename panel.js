@@ -51,8 +51,9 @@ function profileCard(name,profile){
 }
 function renderPublicStatistics(content,a,teams){
  const info=a.statistics;
- const resultDate=value=>activeSport==='nfl'?value.slice(0,10).split('-').reverse().join('/'):date(value);
+ const resultDate=value=>['nfl','american_football'].includes(activeSport)?value.slice(0,10).split('-').reverse().join('/'):date(value);
  const note=element('section',null,'insight-box');note.append(element('h3','Resultados recientes · '+info.source_name),element('p',info.period),element('p',info.warning));
+ if(info.comparison)note.append(element('p',info.comparison));
  note.append(element('p','Estadísticas descriptivas: no modifican los porcentajes del mercado. Consulta: '+date(info.fetched_utc,true)+' · Chile.'));
  if(info.cache_old)note.append(element('p','Datos de hace más de 24 horas. Actualiza antes de interpretarlos.','no-history'));
  content.append(note);const grid=element('div',null,'team-grid');
@@ -61,8 +62,8 @@ function renderPublicStatistics(content,a,teams){
   if(!p){card.append(element('p','Sin resultados reconocidos en esta muestra.'));grid.append(card);continue;}
   card.append(element('p',`${p.matches} partidos de muestra: ${p.wins} victorias, ${p.losses} derrotas${p.draws?', '+p.draws+' empates':''}.`));
   if(activeSport==='tennis')card.append(element('p',`Sets: ${p.sets_for} ganados / ${p.sets_against} perdidos.`));
-  else card.append(element('p',`Promedio de puntos: ${p.scored_per_match.toFixed(1)} a favor / ${p.conceded_per_match.toFixed(1)} en contra.`),element('p',`${p.venue_label}: ${p.venue_wins} victorias en ${p.venue_matches} partidos de esta muestra.`));
-  card.append(element('small','Último resultado: '+resultDate(p.latest_result)+(activeSport==='nfl'?' · fecha de la fuente':' · Chile')));
+  else card.append(element('p',`Promedio de ${p.unit}: ${p.scored_per_match.toFixed(1)} a favor / ${p.conceded_per_match.toFixed(1)} en contra.`),element('p',`${p.venue_label}: ${p.venue_wins} victorias en ${p.venue_matches} partidos de esta muestra.`));
+  card.append(element('small','Último resultado: '+resultDate(p.latest_result)+(['nfl','american_football'].includes(activeSport)?' · fecha de la fuente':' · Chile')));
   for(const match of [...p.last_matches].reverse()){
    const row=element('div',null,'recent-match');row.append(element('span',resultDate(match.date).split(',')[0]),element('span',match.opponent+(match.tournament?' · '+match.tournament:match.at_home?' · Local':' · Visitante')),element('b',`${match.score_for}–${match.score_against} ${match.result}`));card.append(row);
   }
@@ -76,11 +77,13 @@ function openAnalysis(eventId){selectedEvent=eventId;renderAnalysis();if(!$('tea
 function renderAnalysis(){
  const dialog=$('team-dialog');const keepState=dialog.dataset.eventId===selectedEvent;
  const previousScroll=keepState?dialog.scrollTop:0;
- const methodOpen=keepState&&Boolean(dialog.querySelector('details')?.open);
+ const openSections=new Set(keepState?[...dialog.querySelectorAll('details[open]')].map(d=>d.querySelector('summary')?.textContent):[]);
+ const methodOpen=openSections.has('Método y validación');
  const a=analyses.find(a=>a.event_id===selectedEvent);if(!a){$('team-content').replaceChildren(element('p','Este partido ya no aparece en la captura actual. Cierra la ficha y revisa los partidos disponibles.','no-history'));return;}
  $('team-title').textContent=a.event;$('team-basis').textContent=labelBasis(a);$('team-date').textContent=competition(a)+' · '+date(a.start_utc)+' · hora de Chile';
  const content=$('team-content');content.replaceChildren();const teams=a.event.split(' - ');
  const probabilities=element('div',null,'probabilities');if(sides().length===2)probabilities.classList.add('two-way');for(const side of sides()){const box=element('div',side==='X'?'Empate':side==='1'?teams[0]:teams[1]||'Participante 2');box.append(element('b',percent(a.probabilities[side])),element('small',a.basis!=='Mercado Betano'?`Mercado: ${percent((a.market_probabilities||a.probabilities)[side])}`:'Estimación del mercado'));probabilities.append(box);}content.append(probabilities);
+ window.renderOddsHistory(content,a);
  const h=a.historical;
  if(h?.home_profile&&h?.away_profile){
   const home=h.home_profile.recent,away=h.away_profile.recent;
@@ -100,6 +103,7 @@ function renderAnalysis(){
   const link=element('a','Consultar fuente de resultados · Football-Data','source');link.href=h.source_url;link.target='_blank';link.rel='noopener noreferrer';content.append(link);
   const detail=element('details',null,'dialog-detail');detail.open=methodOpen;detail.append(element('summary','Método y validación'));const validation=h.validation||{};detail.append(element('p',`Poisson experimental basado en goles y promedio de liga. Evaluación cronológica: ${validation.matches||0} partidos. Muestra limitada; no prueba rentabilidad ni garantiza calibración de los porcentajes.`));content.append(detail);
  }
+ for(const detail of dialog.querySelectorAll('details'))if(openSections.has(detail.querySelector('summary')?.textContent))detail.open=true;
  dialog.dataset.eventId=selectedEvent;dialog.scrollTop=previousScroll;
 }
 const comboOpen=new Set();
@@ -132,7 +136,7 @@ async function load(){
   let data;if(staticMode){data=await window.staticData(requestedSport,requestedDay);}else{const response=await fetch('/api/data'+(comboQuery||'?')+(comboQuery?'&':'')+'sport='+requestedSport+'&day='+requestedDay);if(!response.ok)throw new Error();data=await response.json();}if(requestedSport!==activeSport||requestedDay!==$('day').value)return;rows=data.rows;analyses=data.analysis||[];combos=data.combinations||[];available=data.availability||{};refreshState=data;renderActivity();renderUpcoming();
   $('refresh').disabled=!sportCatalog[activeSport].supported||data.running;$('refresh').textContent=data.running?'Actualizando…':'Actualizar datos';$('status').textContent=data.message;$('status').classList.toggle('error',data.refresh_status==='error');
   if(staticMode){$('refresh').disabled=false;$('refresh').textContent='Cargar última publicación';}
-  const next=JSON.stringify([rows,analyses,combos,available]);if(next!==signature){render();renderCombos();if($('team-dialog').open)renderAnalysis();signature=next;}
+  const next=JSON.stringify([rows,analyses,combos,available,data.history,data.tracking,data.sport_status]);if(next!==signature){render();renderCombos();window.renderInsights(data);if($('team-dialog').open)renderAnalysis();signature=next;}
  }catch{if(requestedSport!==activeSport||requestedDay!==$('day').value)return;$('status').textContent=staticMode?'No se pudo cargar la publicación. Revisa la conexión y vuelve a intentarlo.':'No se pudo conectar al panel. Vuelve a abrir Abrir Betano.';$('status').classList.add('error');refreshState={running:false};renderActivity();}
 }
 async function post(path){const response=await fetch(path,{method:'POST',headers:{'X-Panel-Token':token}});if(!response.ok)throw new Error();await load();}
@@ -149,7 +153,7 @@ function sportLabels(){
  $('odds-title').textContent=sides().length===3?'CUOTAS · 1 / X / 2':tennis?'CUOTAS · JUGADOR 1 / 2':'CUOTAS · EQUIPO 1 / 2';
  $('filter').querySelector('[value="real"]').textContent=name+' · partidos reales';$('filter').querySelector('[value="historical"]').hidden=false;
  $('sport-hint').textContent=football?'Pulsa Analizar equipos para comparar forma, goles y rendimiento local/visitante. «Solo cuotas» indica que no hay historial suficiente.':tennis?'Ganador del partido · dos participantes, sin empate. Consulta resultados recientes en Analizar jugadores. Muestra parcial gratuita; los porcentajes siguen basados en cuotas.':name+' real · mercado Ganador de dos resultados. No incluye simulaciones, hándicaps ni totales. Estadísticas gratuitas en Analizar equipos; porcentajes basados en cuotas; consulta las reglas de prórroga y empate del mercado.';
- if(!['football','tennis','nba','nfl'].includes(activeSport))$('sport-hint').textContent=info.supported?'Mercado principal de '+info.name+'. Porcentajes derivados de cuotas; sin estadísticas independientes. No garantiza todas las ligas ni todos los eventos.':'Categoría encontrada en el menú público de Betano. Su mercado necesita un adaptador específico; utiliza Abrir en Betano para consultarla.';
+ if(!['football','tennis','nba','nfl'].includes(activeSport))$('sport-hint').textContent=info.supported?'Mercado principal de '+info.name+'. Consulta la ficha para ver la cobertura estadística disponible. Los porcentajes siguen basados en cuotas salvo modelo indicado.':'Categoría encontrada en el menú público de Betano. Su mercado necesita un adaptador específico; utiliza Abrir en Betano para consultarla.';
  $('download').href=staticMode?'#':'/download?sport='+activeSport+'&day='+$('day').value;$('download').download='cuotas-'+activeSport+'.csv';
 }
 function selectSport(nextSport){
@@ -159,12 +163,12 @@ function selectSport(nextSport){
  activeSport=nextSport;const saved=sportSettings.get(activeSport);
  const defaults={search:'',filter:'real',sort:'probability-desc',day:'today','combo-min':'1.50','combo-max':'2.00','combo-leg':'1.45','combo-legs':'4'};
  for(const id of ids)$(id).value=saved?saved.values[id]:defaults[id];comboQuery=saved?saved.comboQuery:'';
- rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();signature=null;selectedEvent=null;$('team-dialog').close();
+ rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();window.renderInsights({});signature=null;selectedEvent=null;$('team-dialog').close();
  sportLabels();render();renderCombos();$('refresh').disabled=true;$('status').textContent='Cargando '+sportNames[activeSport]+'…';load();
 }
 for(const button of document.querySelectorAll('[data-sport]'))button.onclick=()=>selectSport(button.dataset.sport);
 $('sport-select').onchange=()=>selectSport($('sport-select').value);
 $('show-upcoming').onclick=()=>{$('day').value='upcoming';$('day').dispatchEvent(new Event('change'));};
-$('day').onchange=()=>{rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();signature=null;selectedEvent=null;$('team-dialog').close();sportLabels();render();renderCombos();load();};
+$('day').onchange=()=>{rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();window.renderInsights({});signature=null;selectedEvent=null;$('team-dialog').close();sportLabels();render();renderCombos();load();};
 $('download').addEventListener('click',event=>{if(!staticMode)return;event.preventDefault();const fields=['event','competition','start_utc','market','selection','odds','observed_utc'];const csv=[fields,...rows.map(r=>fields.map(k=>r[k]||''))].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=element('a');a.href=url;a.download='cuotas-'+activeSport+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);sportLabels();load();setInterval(load,staticMode?60000:2500);setInterval(renderActivity,1000);

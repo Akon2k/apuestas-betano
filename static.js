@@ -17,6 +17,7 @@ window.staticData=async function(sport,period){
  });
  const starts=upcoming.map(r=>r.start_utc).sort();
  return {rows:selected,analysis,combinations:window.staticCombinations(selected,analysis),
+  history:payload.history||{},tracking:payload.tracking||{},sport_status:payload.sport_status||[],
   availability:{capture_utc:payload.rows[0]?.observed_utc,upcoming_events:new Set(upcoming.map(r=>r.event_id)).size,next_start_utc:starts[0]},
   running:false,refresh_status:'idle',message:'Página de consulta. Publicación: '+date(payload.built_utc,true)+' · Chile. La captura se ejecuta en el PC; este botón carga la última versión publicada.'};
 };
