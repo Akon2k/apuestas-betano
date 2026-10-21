@@ -10,7 +10,7 @@ const sportCatalog=JSON.parse($('sport-catalog').textContent);
 const sportNames=Object.fromEntries(Object.entries(sportCatalog).map(([id,info])=>[id,info.name]));
 for(const [id,info] of Object.entries(sportCatalog)){
  const option=element('option',info.name+(info.supported?'':' · catálogo'));option.value=id;$('sport-select').append(option);
- const button=element('button');button.dataset.sport=id;button.setAttribute('aria-pressed','false');button.append(element('strong',info.name),element('small',info.supported?'Con captura':'Solo catálogo'));document.querySelector('.sport-tabs').append(button);
+ const button=element('button');button.dataset.sport=id;button.setAttribute('aria-pressed','false');button.append(element('strong',info.name),element('small',info.supported?'En vivo':'Catálogo'));document.querySelector('.sport-tabs').append(button);
 }
 const sides=()=>sportCatalog[activeSport].outcomes===3?['1','X','2']:['1','2'];
 const percent=n=>(n*100).toFixed(1)+' %';
@@ -179,3 +179,4 @@ $('show-upcoming').onclick=()=>{$('day').value='upcoming';$('day').dispatchEvent
 $('day').onchange=()=>{rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();window.renderInsights({});signature=null;selectedEvent=null;$('team-dialog').close();sportLabels();render();renderCombos();load();};
 $('download').addEventListener('click',event=>{if(!staticMode)return;event.preventDefault();const fields=['event','competition','start_utc','market','selection','odds','observed_utc'];const csv=[fields,...rows.map(r=>fields.map(k=>r[k]||''))].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=element('a');a.href=url;a.download='cuotas-'+activeSport+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);sportLabels();load();setInterval(load,staticMode?60000:5000);setInterval(renderActivity,1000);
+const themeBtn=$('theme-toggle');if(themeBtn){const isDark=()=>document.documentElement.getAttribute('data-tema')==='oscuro'||(!document.documentElement.getAttribute('data-tema')&&window.matchMedia('(prefers-color-scheme: dark)').matches);const updateTheme=()=>{themeBtn.textContent=isDark()?'☀️ Modo claro':'🌙 Modo oscuro';};themeBtn.onclick=()=>{const next=isDark()?'claro':'oscuro';document.documentElement.setAttribute('data-tema',next);localStorage.setItem('betano_tema',next);updateTheme();};updateTheme();}

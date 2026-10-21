@@ -34,7 +34,7 @@ window.staticData=async function(sport,period){
  return {rows:selected,analysis,combinations:window.staticCombinations(selected,analysis),
   history:payload.history||{},tracking:payload.tracking||{},sport_status:payload.sport_status||[],
   availability:{capture_utc:payload.rows[0]?.observed_utc,upcoming_events:new Set(upcoming.map(r=>r.event_id)).size,next_start_utc:starts[0]},
-  running:false,refresh_status:'idle',message:'Página de consulta. Publicación: '+date(payload.built_utc,true)+' · Chile. La captura se ejecuta en el PC; este botón carga la última versión publicada.'};
+  running:false,refresh_status:'idle',message:'Publicación: '+date(payload.built_utc,true)+' (Santiago) · Cuotas oficiales capturadas desde el PC'};
 };
 window.staticCombinations=function(rows,analyses){
  const minimum=Number($('combo-min').value),maximum=Number($('combo-max').value),limit=Number($('combo-leg').value),maxLegs=Number($('combo-legs').value);
