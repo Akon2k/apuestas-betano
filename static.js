@@ -10,8 +10,18 @@ window.staticData=async function(sport,period){
  const offline=entry.offline||!navigator.onLine;
  const note=document.getElementById('offline-note');if(note)note.hidden=!offline;
  const chileDay=value=>chileFormatter.format(new Date(value));
+ const tomorrowDay=()=>{const d=new Date(now);d.setDate(d.getDate()+1);return chileFormatter.format(d);};
  const upcoming=payload.rows.filter(r=>Date.parse(r.start_utc)>now);
- const selected=payload.rows.filter(r=>period==='all'||Date.parse(r.start_utc)>now&&(period==='upcoming'||chileDay(r.start_utc)===chileDay(now)));
+ const selected=payload.rows.filter(r=>{
+  if(period==='all')return true;
+  const t=Date.parse(r.start_utc);
+  if(!Number.isFinite(t)||t<=now)return false;
+  if(period==='upcoming')return true;
+  const d=chileDay(t);
+  if(period==='today')return d===chileDay(now);
+  if(period==='today-tomorrow')return d===chileDay(now)||d===tomorrowDay();
+  return false;
+ });
  const ids=new Set(selected.map(r=>r.event_id));
  const analysis=payload.analysis.filter(a=>ids.has(a.event_id)).map(a=>{
   const observed=selected.filter(r=>r.event_id===a.event_id).map(r=>Date.parse(r.observed_utc));

@@ -36,7 +36,7 @@ function render(){
   const advice=element('td');advice.append(element('span',shortAdvice(a),a.status==='value'?'positive':null),element('small',labelBasis(a),'subline'));if(a.status==='value')advice.append(element('small',`Cuota ${a.pick_odds.toFixed(2)} · VE ${percent(a.expected_value)}`,'subline'));tr.append(advice);
   const action=element('td');const button=element('button',a.historical||a.statistics?.available?(activeSport==='tennis'?'Analizar jugadores':'Analizar equipos'):'Ver disponibilidad','row-action');button.onclick=()=>openAnalysis(a.event_id);action.append(button);tr.append(action);body.append(tr);
  }
- if(!body.children.length){const tr=element('tr');const td=element('td',!sportCatalog[activeSport].supported?'Esta categoría está en el catálogo. Su captura aún no está adaptada; consulta Abrir en Betano.':rows.length?'No hay partidos con estos filtros.':$('day').value==='today'?'No hay partidos de hoy sin comenzar en la captura. Actualiza los datos o selecciona Todos los capturados.':'Todavía no hay cuotas. Pulsa Actualizar datos.','empty');td.colSpan=6;tr.append(td);body.append(tr);}
+ if(!body.children.length){const tr=element('tr');const td=element('td',!sportCatalog[activeSport].supported?'Esta categoría está en el catálogo. Su captura aún no está adaptada; consulta Abrir en Betano.':rows.length?'No hay partidos con estos filtros.':$('day').value==='today'||$('day').value==='today-tomorrow'?'No hay partidos de hoy o mañana sin comenzar en la captura. Actualiza los datos o selecciona Todos los capturados.':'Todavía no hay cuotas. Pulsa Actualizar datos.','empty');td.colSpan=6;tr.append(td);body.append(tr);}
  $('match-count').textContent=`${visible.length} partidos visibles · análisis y fuentes disponibles en cada fila.`;
 }
 function profileCard(name,profile){
@@ -133,7 +133,7 @@ function renderActivity(){
  $('refresh-estimate').textContent=remaining>0?'Faltan aproximadamente '+elapsedTime(remaining)+' · estimación, no tiempo exacto.':'Está tardando más de lo estimado; la consulta sigue en curso.';
 }
 function renderUpcoming(){
- const visible=$('day').value==='today'&&!rows.length&&available.upcoming_events>0;
+ const visible=($('day').value==='today'||$('day').value==='today-tomorrow')&&!rows.length&&available.upcoming_events>0;
  $('upcoming-notice').hidden=!visible;
  if(visible)$('upcoming-text').textContent='No hay partidos de hoy sin comenzar en esta captura. Hay '+available.upcoming_events+' partidos para próximas fechas. El primero comienza el '+date(available.next_start_utc)+' (Chile).';
 }
