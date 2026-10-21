@@ -1,6 +1,6 @@
 'use strict';
 // Scope-specific prefix keeps other GitHub Pages applications' caches intact.
-const PREFIX='betano-'+self.registration.scope+'-',CACHE=PREFIX+'2e42fc1ee5c54f31';
+const PREFIX='betano-'+self.registration.scope+'-',CACHE=PREFIX+'26261b7d3ae7df3f';
 const FILES=['./','./index.html','./panel.css','./panel.js','./static.js','./insights.js','./pwa.js','./manifest.webmanifest','./icon-192.png','./icon-512.png',...["./datos/football.json", "./datos/tennis.json", "./datos/nba.json", "./datos/nfl.json"]];
 const URLS=new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(FILES);await self.skipWaiting();})()));

@@ -20,7 +20,21 @@ function historyChart(target,eventId,market){
  const sides=['1','X','2'].filter(s=>points.some(p=>p.odds[s]));
  const first=points[0],last=points.at(-1);const legend=element('div',null,'history-legend');
  const colors={'1':'#ffad75','X':'#d2bdff','2':'#77d5bf'};
- for(const side of sides){const from=first.odds[side],to=last.odds[side];if(!from||!to)continue;const change=to-from;const box=element('div');box.style.borderColor=colors[side];box.append(element('strong',side+' · '+from.toFixed(2)+' a '+to.toFixed(2)),element('small',(change>0?'Subió ':change<0?'Bajó ':'Sin cambio ')+(Math.abs(change/from)*100).toFixed(1)+' %'));legend.append(box);}target.append(legend);
+ for(const side of sides){
+  const from=first.odds[side],to=last.odds[side];
+  if(!from||!to)continue;
+  const change=to-from;
+  const box=element('div',null,'history-legend-box');
+  box.style.borderLeftColor=colors[side];
+  const trendText=change>0?'▲ Subió ':change<0?'▼ Bajó ':'• Sin cambio ';
+  const pctText=(Math.abs(change/from)*100).toFixed(1)+' %';
+  box.append(
+    element('strong',side+' · '+from.toFixed(2)+' → '+to.toFixed(2),'history-legend-quote'),
+    element('small',trendText+pctText,'history-legend-change'+(change>0?' up':change<0?' down':''))
+  );
+  legend.append(box);
+ }
+ target.append(legend);
  target.append(element('p',`${points.length} observaciones guardadas · ${date(first.observed_utc)} a ${date(last.observed_utc)} · Chile. Hasta 60 puntos por evento dentro de 90 días. Las nuevas cuotas iguales no duplican puntos.`,'hint'));
  const current=rows.filter(r=>r.event_id===eventId&&r.market===last.market);
  if(current.length===Object.keys(last.odds).length&&current.every(r=>Number(r.odds)===last.odds[r.selection])&&Date.parse(current[0]?.observed_utc)>Date.parse(last.observed_utc))target.append(element('p','Comprobadas nuevamente sin cambios el '+date(current[0].observed_utc,true)+' · Chile.','hint'));
