@@ -1,7 +1,7 @@
 'use strict';
 // Scope-specific prefix keeps other GitHub Pages applications' caches intact.
-const PREFIX='betano-'+self.registration.scope+'-',CACHE=PREFIX+'7e5dbcb3129ee056';
-const FILES=['./','./index.html','./panel.css','./panel.js','./static.js','./insights.js','./pwa.js','./manifest.webmanifest','./icon-192.png','./icon-512.png',...["./datos/football.json", "./datos/tennis.json", "./datos/nba.json", "./datos/nfl.json"]];
+const PREFIX='betano-'+self.registration.scope+'-',CACHE=PREFIX+'894a6bf6ea44f37e';
+const FILES=['./','./index.html','./panel.css','./minimal.css','./panel.js','./static.js','./insights.js','./simulation.js','./wallet.js','./pwa.js','./manifest.webmanifest','./icon-192.png','./icon-512.png',...["./datos/football.json", "./datos/tennis.json", "./datos/nba.json", "./datos/nfl.json"]];
 const URLS=new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(FILES);await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const name of await caches.keys())if(name.startsWith(PREFIX)&&name!==CACHE)await caches.delete(name);await self.clients.claim();})()));

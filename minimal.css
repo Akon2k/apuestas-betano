@@ -1,0 +1,206 @@
+/* Propuesta de simplificación sobre el sistema verde y neutro existente. */
+:root {
+  --verde: #087741;
+  --verde-hover: #065e33;
+  --verde-texto: #086b3d;
+  --fondo: #ffffff;
+  --tarjeta: #ffffff;
+  --tarjeta-secundaria: #f5f7f6;
+  --suave: #53625a;
+  --borde: #dce3de;
+  --boton-borde: #cdd7d0;
+  --fila-destacada: #fffbeb;
+  --sombra: none;
+  --placeholder: #627168;
+  --chart-1: #a44c14;
+  --chart-x: #7551a8;
+  --chart-2: #08725c;
+}
+:root[data-tema="oscuro"] {
+  --verde: #047857;
+  --verde-hover: #065f46;
+  --verde-texto: #6ee7b7;
+  --fondo: #101815;
+  --tarjeta: #101815;
+  --tarjeta-secundaria: #19241f;
+  --input-fondo: #101815;
+  --suave: #a4b6ab;
+  --borde: #35473c;
+  --boton-borde: #496053;
+  --boton-fondo: #101815;
+  --boton-texto: #b7ccbf;
+  --boton-hover: #23352a;
+  --fila-hover: #1b2a21;
+  --odd-fondo: #1b2a21;
+  --odd-borde: #35473c;
+  --fila-destacada: #282515;
+  --placeholder: #a4b6ab;
+  --chart-1: #ffad75;
+  --chart-x: #d2bdff;
+  --chart-2: #77d5bf;
+}
+body { font-size: 15px; }
+main { max-width: 1160px; padding: 36px 28px 40px; }
+h1 { font-size: 25px; letter-spacing: -.025em; font-weight: 650; }
+h2 { font-size: 20px; font-weight: 650; }
+h3 { font-size: 16px; }
+small, .nota-suave, .subline { font-size: 13px; }
+button, .secondary, .boton-enlace, input, select, summary { min-height: 44px; }
+button, .secondary, .boton-enlace { font-size: 14px; border-radius: 6px; }
+button, a, input, select { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--verde-texto); outline-offset: 3px;
+}
+::placeholder { color: var(--placeholder); opacity: 1; }
+::selection { background: var(--pestana-activa-fondo); color: var(--pestana-activa-texto); }
+input { caret-color: var(--verde-texto); }
+table, .metrics, time, .probabilities { font-variant-numeric: tabular-nums; }
+a { text-underline-offset: .2em; }
+summary { cursor: pointer; color: var(--texto-secundario); align-content: center; }
+.topbar { margin-bottom: 28px; }
+.header-actions { gap: 8px; }
+#install-app[hidden] { display: none; }
+.wallet-heading, .wallet-journal-heading, .wallet-entry-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.simulation-label { display: inline-block; color: var(--suave); font-size: 12px; padding: 5px 0; }
+.wallet-balances { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; border-block: 1px solid var(--borde); padding: 24px 0; margin: 20px 0 12px; }
+.wallet-balances span { display: block; color: var(--suave); font-size: 13px; }
+.wallet-balances strong { display: block; font-size: 26px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.wallet-journal-heading { align-items: center; margin-top: 28px; }
+.wallet-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.wallet-empty { padding: 24px 0; max-width: 65ch; color: var(--suave); }
+.wallet-entry { border-bottom: 1px solid var(--borde); padding: 20px 0; }
+.wallet-entry p { margin: 6px 0; }
+.wallet-entry strong { font-weight: 600; }
+.wallet-error { color: var(--rojo); font-size: 14px; }
+.wallet-evaluation, .wallet-help { margin-top: 20px; max-width: 75ch; }
+.wallet-help p, .wallet-evaluation p { font-size: 14px; color: var(--suave); }
+body[data-view="wallet"] .panel-control, body[data-view="wallet"] .panel-deportes { display: none; }
+p { text-wrap: pretty; }
+#simulation-dialog, #simulation-result-dialog, #wallet-import-dialog { max-width: 600px; }
+#simulation-form > label, #simulation-result-form > label { display: block; margin: 18px 0 6px; }
+#simulation-form > input, #simulation-form > select, #simulation-result-form > input, #simulation-result-form > select { width: 100%; }
+#simulation-submit { margin-top: 16px; }
+.simulation-action { margin-left: 6px; color: var(--verde-texto); }
+.history-legend > div, .history-legend-box { border: 1px solid var(--borde); box-shadow: none; }
+#team-basis { font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+.panel-deportes { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--borde); padding-bottom: 18px; margin-bottom: 22px; }
+.deportes-cabecera { order: 2; margin: 0 !important; }
+.deportes-cabecera > div:first-child { display: none; }
+.sport-tabs { display: flex; gap: 8px; margin: 0; }
+.sport-tabs button { min-height: 44px; padding: 10px 20px; border: 0; background: transparent; border-radius: 6px; }
+.sport-tabs button.active { box-shadow: none; background: var(--pestana-activa-fondo); color: var(--verde-texto); }
+.sport-tabs strong { font-size: 15px; font-weight: 600; }
+#sport-source { border-color: transparent; background: transparent; color: var(--suave); font-weight: 500; }
+.panel-control { margin-bottom: 22px; }
+.campo-fecha { gap: 12px; }
+.campo-fecha label { color: var(--suave); font-size: 14px; }
+.campo-fecha select { max-width: 280px; }
+.metrics { gap: 16px; color: var(--suave); }
+.metrics > span { background: none; border: 0; padding: 0; border-radius: 0; font-size: 13px; color: inherit; }
+.metrics b { color: var(--texto); font-weight: 600; }
+.tabs { margin: 0 0 20px; padding: 0; gap: 24px; border-bottom: 1px solid var(--borde); flex-wrap: nowrap; }
+.tabs button { border: 0; border-radius: 0; background: none; color: var(--suave); padding: 12px 0; min-width: 44px; font-size: 14px; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button.active { background: none; border-color: var(--verde-texto); color: var(--verde-texto); font-weight: 650; }
+.tabs button { transition: none; }
+.toolbar { gap: 10px; margin: 0 0 14px; }
+#search { min-width: 120px; max-width: 520px; }
+.filter-options { position: relative; margin-left: auto; }
+.filter-options > summary { border: 1px solid var(--boton-borde); border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+.filter-popover { position: absolute; z-index: 5; right: 0; top: calc(100% + 8px); width: min(310px, calc(100vw - 40px)); padding: 18px; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px #00000014; display: grid; gap: 8px; }
+.filter-popover label { margin-top: 6px; font-size: 13px; color: var(--suave); }
+.filter-popover select { width: 100%; }
+.panel-aviso { display: block; background: transparent; border: 0; border-radius: 0; padding: 0; color: var(--suave); font-size: 13px; margin: 2px 0 8px; }
+.panel-aviso summary { font-size: 13px; min-height: 36px; }
+.panel-aviso .aviso-item { max-width: 75ch; padding: 4px 0 8px; }
+.tablewrap { border: 0; border-radius: 0; box-shadow: none; margin-top: 0; background: transparent; }
+table { min-width: 0; }
+th { background: var(--tarjeta-secundaria); text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; padding: 12px 10px; }
+td { padding: 18px 10px; font-size: 14px; }
+th:first-child, td:first-child { padding-left: 14px; }
+.match-name { font-size: 14px; font-weight: 600; }
+.subline { font-size: 12px; line-height: 1.5; }
+tr.probability-high td:first-child { border-left: 0; }
+.odd { background: none; border: 0; padding: 3px 0; min-width: 46px; font-size: 14px; border-radius: 0; }
+.odd small { font-size: 11px; margin-right: 5px; }
+.row-action { min-height: 44px; background: transparent; font-weight: 500; font-size: 13px; padding: 8px 10px; }
+.data-help { border-top: 1px solid var(--borde); margin-top: 28px; padding-top: 8px; max-width: 75ch; font-size: 13px; color: var(--suave); }
+.data-help p { max-width: 75ch; }
+.status-barra { background: none; border: 0; padding: 0; color: var(--suave); }
+.status-barra.error { color: var(--rojo); font-weight: 600; }
+footer { font-size: 12px; text-align: left; max-width: 85ch; margin-top: 22px; }
+.upcoming-notice { border-radius: 8px; }
+.combo-controls { background: none; border: 0; padding: 12px 0; }
+.combo-grid, .team-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.team-card { box-shadow: none; }
+.probabilities > div { border: 0; background: var(--tarjeta-secundaria); }
+dialog { border-radius: 12px; padding: 24px; }
+.dialog-head { gap: 16px; }
+.history-chart { padding: 0; border: 0; border-radius: 0; }
+.evaluation-panel { border-radius: 0; border: 0; box-shadow: none; padding: 20px 0; }
+.evaluation-panel .tablewrap, #view-results .tablewrap, #view-status .tablewrap { overflow-x: auto; }
+.evaluation-panel table { min-width: 1000px; }
+#view-results > .tablewrap table { min-width: 780px; }
+#view-status table { min-width: 740px; }
+@media (max-width: 900px) and (min-width: 641px) {
+  .filtro-fecha-fila { align-items: flex-start !important; }
+  .metrics { width: 100%; }
+  #view-matches table { min-width: 850px; }
+  #view-matches .tablewrap { overflow-x: auto; }
+}
+@media (max-width: 640px) {
+  .wallet-balances { grid-template-columns: 1fr 1fr; gap: 20px; }
+  .wallet-balances > div:last-child { grid-column: 1/-1; }
+  .wallet-balances strong { font-size: 23px; }
+  .wallet-heading { gap: 8px; }
+  .wallet-tools { width: 100%; }
+  .wallet-tools button { flex: 1; }
+  main { padding: 22px 18px 32px; }
+  h1 { font-size: 23px; }
+  .topbar { gap: 16px; margin-bottom: 20px; }
+  .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1.3fr; }
+  .header-actions button { width: 100%; }
+  .panel-deportes { display: block; position: relative; padding-bottom: 14px; margin-bottom: 18px; }
+  .sport-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .sport-tabs button { padding: 10px 4px; min-width: 0; }
+  .sport-tabs strong { font-size: 14px; }
+  .deportes-cabecera { display: none !important; }
+  .panel-control { margin-bottom: 18px; }
+  .filtro-fecha-fila { gap: 12px !important; }
+  .campo-fecha { width: 100%; flex-wrap: nowrap; }
+  .campo-fecha select { flex: 1; min-width: 0; max-width: none; }
+  .metrics { gap: 6px 16px; font-size: 12px; }
+  .metrics > span:last-child { flex-basis: 100%; }
+  .metrics > span { font-size: 12px; }
+  .tabs { gap: 0; justify-content: space-between; margin-bottom: 18px; }
+  .tabs button { flex: initial; font-size: 12px; padding: 10px 1px; }
+  #search { flex-basis: 100%; max-width: none; width: 100%; }
+  .toolbar { gap: 8px; }
+  .filter-options { margin-left: 0; }
+  .filter-popover { left: 0; right: auto; }
+  #download { margin-left: auto; }
+  .panel-aviso { margin-bottom: 12px; }
+  #view-matches table { width: 100%; min-width: 0; }
+  #view-matches thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  #view-matches tbody { display: block; }
+  #view-matches tr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px 16px; padding: 22px 0; border-top: 1px solid var(--borde); }
+  #view-matches td { padding: 0; border: 0; font-size: 14px; min-width: 0; }
+  #view-matches td::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 12px; color: var(--suave); }
+  #view-matches td:first-child { grid-column: 1 / -1; }
+  #view-matches td:first-child::before, #view-matches td:nth-child(6)::before { display: none; }
+  #view-matches .match-name { font-size: 16px; line-height: 1.4; }
+  #view-matches td:nth-child(2), #view-matches td:nth-child(3), #view-matches td:nth-child(6) { grid-column: 1 / -1; }
+  #view-matches td:nth-child(2)::before { display: inline; margin-right: 8px; }
+  #view-matches .odds { gap: 24px; }
+  #view-matches .odd { font-size: 16px; text-align: left; min-width: 50px; }
+  #view-matches td:nth-child(4) .match-name, #view-matches td:nth-child(5) { font-size: 14px; }
+  #view-matches .row-action { justify-content: flex-start; padding: 8px 0; border: 0; color: var(--verde-texto); text-decoration: underline; text-underline-offset: 4px; }
+  #view-matches .simulation-action { margin-left: 20px; }
+  #view-matches tr.probability-high { padding: 22px 12px; }
+  .data-help { margin-top: 18px; }
+  .dialog-head { flex-direction: column; }
+  .dialog-head button { align-self: flex-end; }
+  dialog { width: calc(100vw - 24px); padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, a, input, select { transition: none; }
+}

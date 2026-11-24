@@ -19,13 +19,13 @@ function historyChart(target,eventId,market){
  if(!points.length){target.append(element('p','Aún no hay capturas históricas de este mercado. Se guardarán con las próximas actualizaciones.','hint'));return;}
  const sides=['1','X','2'].filter(s=>points.some(p=>p.odds[s]));
  const first=points[0],last=points.at(-1);const legend=element('div',null,'history-legend');
- const colors={'1':'#ffad75','X':'#d2bdff','2':'#77d5bf'};
+ const colors={'1':'var(--chart-1)','X':'var(--chart-x)','2':'var(--chart-2)'};
  for(const side of sides){
   const from=first.odds[side],to=last.odds[side];
   if(!from||!to)continue;
   const change=to-from;
   const box=element('div',null,'history-legend-box');
-  box.style.borderLeftColor=colors[side];
+  box.style.color=colors[side];
   const trendText=change>0?'▲ Subió ':change<0?'▼ Bajó ':'• Sin cambio ';
   const pctText=(Math.abs(change/from)*100).toFixed(1)+' %';
   box.append(
@@ -47,9 +47,9 @@ function historyChart(target,eventId,market){
  const svg=svgNode('svg',{viewBox:'0 0 760 250',role:'img','aria-label':'Evolución de cuotas por fecha de captura',class:'history-chart'});
  const t0=Date.parse(first.observed_utc),t1=Date.parse(last.observed_utc);
  const x=t=>60+(t1===t0?.5:(Date.parse(t)-t0)/(t1-t0))*675,y=v=>210-(v-min)/(max-min)*185;
- for(let i=0;i<5;i++){const value=min+(max-min)*i/4,py=y(value);svg.append(svgNode('line',{x1:60,x2:735,y1:py,y2:py,stroke:'#33425b'}));const label=svgNode('text',{x:8,y:py+4,fill:'#afc1da','font-size':12});label.textContent=value.toFixed(2);svg.append(label);}
+ for(let i=0;i<5;i++){const value=min+(max-min)*i/4,py=y(value);svg.append(svgNode('line',{x1:60,x2:735,y1:py,y2:py,stroke:'var(--borde)'}));const label=svgNode('text',{x:8,y:py+4,fill:'var(--suave)','font-size':12});label.textContent=value.toFixed(2);svg.append(label);}
  for(const side of sides){const valid=points.filter(p=>Number.isFinite(p.odds[side]));svg.append(svgNode('polyline',{points:valid.map(p=>x(p.observed_utc)+','+y(p.odds[side])).join(' '),fill:'none',stroke:colors[side],'stroke-width':2}));for(const p of valid){const dot=svgNode('circle',{cx:x(p.observed_utc),cy:y(p.odds[side]),r:3,fill:colors[side]});const title=svgNode('title');title.textContent=side+' · '+p.odds[side].toFixed(2)+' · '+date(p.observed_utc,true);dot.append(title);svg.append(dot);}}
- for(const [px,anchor,value] of [[60,'start',first.observed_utc],[735,'end',last.observed_utc]]){const label=svgNode('text',{x:px,y:239,'text-anchor':anchor,fill:'#afc1da','font-size':11});label.textContent=date(value);svg.append(label);}
+ for(const [px,anchor,value] of [[60,'start',first.observed_utc],[735,'end',last.observed_utc]]){const label=svgNode('text',{x:px,y:239,'text-anchor':anchor,fill:'var(--suave)','font-size':11});label.textContent=date(value);svg.append(label);}
  target.append(svg);const details=element('details',null,'dialog-detail');details.append(element('summary','Ver capturas y horas exactas'));
  for(const p of [...points].reverse().slice(0,20))details.append(element('p',date(p.observed_utc,true)+' · '+sides.filter(s=>p.odds[s]).map(s=>s+': '+p.odds[s].toFixed(2)).join(' · ')));
  target.append(details);

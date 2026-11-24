@@ -1,40 +1,40 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="panel-token" content=""><meta name="panel-sport" content="football"><title>ApuestasBetano · Fútbol</title><link rel="stylesheet" href="./panel.css"><script>
-(function(){const t=localStorage.getItem('betano_tema');if(t)document.documentElement.setAttribute('data-tema',t);})();
-</script><script src="./insights.js" defer></script><script src="./static.js" defer></script><script src="./panel.js" defer></script><meta name="panel-static" content="true"><meta name="theme-color" content="#008837"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><script src="./pwa.js" defer></script></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="panel-token" content=""><meta name="panel-sport" content="football"><title>ApuestasBetano · Fútbol</title><link rel="stylesheet" href="./panel.css"><link rel="stylesheet" href="./minimal.css"><script>
+(function(){const requested=new URLSearchParams(location.search).get('tema');const t=['claro','oscuro'].includes(requested)?requested:localStorage.getItem('betano_tema')||'claro';if(t)document.documentElement.setAttribute('data-tema',t);})();
+</script><script src="./insights.js" defer></script><script src="./simulation.js" defer></script><script src="./static.js" defer></script><script src="./panel.js" defer></script><script src="./wallet.js" defer></script><meta name="panel-static" content="true"><meta name="theme-color" content="#008837"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><script src="./pwa.js" defer></script></head>
 <body><main>
 <header class="topbar">
   <div>
-    <span id="sport-name" class="eyebrow">BETANO CHILE · PANEL DE CUOTAS</span>
-    <h1 id="page-title">Fútbol · Partidos y cuotas</h1>
+    <span id="sport-name" hidden>BETANO CHILE · PANEL DE CUOTAS</span>
+    <h1 id="page-title">Fútbol · cuotas</h1>
   </div>
   <div class="header-actions">
-    <button id="theme-toggle" class="secondary" type="button" aria-label="Cambiar tema">🌙 Modo oscuro</button>
-    <button id="install-app" class="secondary" hidden>Instalar app</button>
+    <button id="theme-toggle" class="secondary" type="button" aria-label="Cambiar tema">Tema oscuro</button>
+
     <button id="refresh" class="primario">Actualizar datos</button>
   </div>
 </header>
 <script id="sport-catalog" type="application/json">{"football": {"name": "Fútbol", "url": "https://www.betanosports.com/sport/futbol/", "supported": true, "code": "FOOT", "outcomes": 3, "market_types": ["MRES", "MR12"]}, "tennis": {"name": "Tenis", "url": "https://www.betanosports.com/sport/tenis/", "supported": true, "code": "TENN", "outcomes": 2, "market_types": ["HTOH"], "capture_url": "https://www.betanosports.com/sport/tenis/proximos-partidos-hoy/"}, "nba": {"name": "NBA", "url": "https://www.betanosports.com/sport/basquetbol/", "supported": true, "code": "BASK", "outcomes": 2, "market_types": ["H2HT", "H2H1"], "league": "nba", "capture_url": "https://www.betanosports.com/sport/basquetbol/proximos-partidos-hoy/"}, "nfl": {"name": "NFL", "url": "https://www.betanosports.com/sport/futbol-americano/", "supported": true, "code": "AMFO", "outcomes": 2, "market_types": ["H2HT", "4191"], "league": "nfl", "capture_url": "https://www.betanosports.com/sport/futbol-americano/proximos-partidos-hoy/"}}</script>
 
-<section class="tarjeta panel-deportes" aria-labelledby="discipline-title">
+<section class="panel-deportes" aria-labelledby="discipline-title">
   <div class="deportes-cabecera">
     <div>
-      <h2 id="discipline-title">Deportes activos</h2>
-      <p class="subtitulo">Fútbol, Tenis, NBA y NFL · Cuotas actualizadas automáticamente cada 60 min.</p>
+      <h2 id="discipline-title" class="visually-hidden">Deporte</h2>
+
     </div>
     <div class="deportes-acciones">
       <a id="sport-source" class="boton-enlace" target="_blank" rel="noopener noreferrer">Abrir en Betano ↗</a>
-      <select id="sport-select" class="visually-hidden" aria-label="Seleccionar disciplina"></select>
+      <select id="sport-select" tabindex="-1" class="visually-hidden" aria-label="Seleccionar disciplina"></select>
       <small id="catalog-status" class="visually-hidden"></small>
     </div>
   </div>
   <nav class="sport-tabs" aria-label="Elegir deporte"></nav>
 </section>
 
-<section class="tarjeta panel-control">
+<section class="panel-control">
   <div class="filtro-fecha-fila">
     <div class="campo-fecha">
-      <label for="day"><b>📅 Fecha del partido:</b></label>
+      <label for="day">Fecha</label>
       <select id="day" aria-label="Fecha de los partidos">
         <option value="today">Hoy · sin comenzar</option>
         <option value="today-tomorrow">Hoy y mañana · sin comenzar</option>
@@ -48,52 +48,54 @@
       <span>Captura: <b id="updated">—</b></span>
     </div>
   </div>
-  <small id="day-note" class="nota-suave">El filtro se aplica a los partidos y combinadas del deporte seleccionado.</small>
-  <p id="status" class="status-barra" role="status" aria-live="polite">Cargando datos…</p>
+  <small id="day-note" class="visually-hidden">El filtro se aplica a los partidos y combinadas del deporte seleccionado.</small>
+
 </section>
 
+<p id="load-error" class="upcoming-notice" role="alert" hidden></p>
 <p id="offline-note" class="upcoming-notice" role="status" hidden>Sin conexión: estás viendo datos guardados. Revisa la fecha de captura; las cuotas pueden haber cambiado.</p>
-<details id="install-help" class="dialog-detail" hidden><summary>Instalar en el celular o computador</summary><p>Android y Chrome/Edge: usa Instalar app o el menú del navegador → Instalar aplicación. iPhone/iPad: Safari → Compartir → Añadir a pantalla de inicio. Abre primero la página con internet para guardar las disciplinas activas.</p><p id="install-status" role="status"></p><p>Sin conexión puedes consultar la última publicación guardada. Las cuotas se actualizan desde el PC; instalar la app no ejecuta el scraper en el celular.</p></details>
+
 
 <section id="refresh-activity" class="refresh-activity" aria-label="Progreso de actualización" hidden><div class="activity-heading"><strong id="refresh-phase">Consultando cuotas</strong><span id="refresh-clock"></span></div><progress id="refresh-progress" aria-label="Actualización en curso"></progress><small id="refresh-estimate">Tiempo aproximado, sujeto a la respuesta de Betano.</small></section>
 <aside id="upcoming-notice" class="upcoming-notice" hidden><p id="upcoming-text"></p><button id="show-upcoming" class="secondary">Ver próximos partidos</button></aside>
 
 <nav class="tabs" aria-label="Secciones">
   <button data-tab="matches" class="active" aria-pressed="true">Partidos</button>
-  <button data-tab="combos" aria-pressed="false">Combinadas ≥ 1,50</button>
-  <button data-tab="history" aria-pressed="false">Historial de cuotas</button>
-  <button data-tab="results" aria-pressed="false">Seguimiento de resultados</button>
-  <button data-tab="status" aria-pressed="false">Estado de capturas</button>
+  <button data-tab="wallet" aria-pressed="false">Cartera</button>
+  <button data-tab="history" aria-pressed="false">Historial</button>
+  <button data-tab="results" aria-pressed="false">Resultados</button>
+  <button data-tab="combos" aria-pressed="false">Combinadas</button>
 </nav>
 
 <section id="view-matches" class="view">
   <div class="toolbar">
-    <input id="search" aria-label="Buscar partido" placeholder="Buscar equipo, torneo o país…">
-    <select id="filter" aria-label="Filtrar análisis">
+    <input type="search" id="search" aria-label="Buscar partido" placeholder="Buscar equipo, torneo o país…">
+<details class="filter-options"><summary>Filtros</summary><div class="filter-popover">    <label for="filter">Mostrar</label><select id="filter" aria-label="Filtrar análisis">
       <option value="real">Partidos reales</option>
       <option value="historical">Con estadísticas</option>
       <option value="candidates">Solo favoritos / candidatas</option>
       <option value="all">Todos, incluidos esports</option>
     </select>
-    <select id="sort" aria-label="Ordenar partidos">
+    <label for="sort">Ordenar por</label><select id="sort" aria-label="Ordenar partidos">
       <option value="probability-desc">Probabilidad: mayor → menor</option>
       <option value="date-asc">Inicio: antes → después</option>
       <option value="date-desc">Inicio: después → antes</option>
       <option value="analysis">Por recomendación</option>
     </select>
+</div></details>
     <a id="download" class="secondary" href="/download" download="cuotas-betano.csv">CSV ↓</a>
   </div>
 
-  <div class="panel-aviso">
+  <details class="panel-aviso"><summary>Cómo leer este análisis</summary>
     <div class="aviso-item">
-      <span>💡</span>
+
       <span id="sport-hint">Pulsa <b>Analizar equipos</b> para ver forma reciente, goles y cara a cara.</span>
     </div>
     <div class="aviso-item probability-legend">
       <span class="punto-ambar" aria-hidden="true"></span>
       <span><b>Fondo ámbar:</b> Favorito con ≥ 50 % de probabilidad estimada (no garantiza victoria).</span>
     </div>
-  </div>
+  </details>
 
   <div class="tablewrap">
     <table>
@@ -113,6 +115,22 @@
   <p id="match-count" class="nota-suave"></p>
 </section>
 
+<section id="view-wallet" class="view" hidden aria-labelledby="wallet-title">
+  <div class="wallet-heading"><div><h2 id="wallet-title">Cartera simulada</h2><p class="nota-suave">Un saldo ficticio para los cuatro deportes. No coloca apuestas reales.</p></div><span class="simulation-label">Simulación · CLP</span></div>
+  <p id="wallet-error" class="wallet-error" role="alert" hidden></p>
+  <div class="wallet-balances" aria-label="Estado de la cartera">
+    <div><span>Disponible</span><strong id="wallet-available">—</strong></div>
+    <div><span>Reservado en pendientes</span><strong id="wallet-reserved">—</strong></div>
+    <div><span>Ganancia neta realizada</span><strong id="wallet-profit">—</strong></div>
+  </div>
+  <p id="wallet-reference" class="nota-suave">Capital inicial: $10.000 · Referencia diaria: $3.000. No exige apostar cada día.</p>
+  <p id="wallet-today" class="nota-suave"></p>
+  <div class="wallet-journal-heading"><h3>Registro de simulaciones</h3><div class="wallet-tools"><button id="wallet-export" class="secondary" type="button">Descargar copia</button><button id="wallet-import-open" class="secondary" type="button">Restaurar copia</button><input id="wallet-import" aria-label="Seleccionar copia de cartera" class="visually-hidden" type="file" accept="application/json,.json" tabindex="-1"></div></div>
+  <p id="wallet-empty" class="wallet-empty">Todavía no hay simulaciones. En Partidos, elige un encuentro vigente y pulsa Simular. Tú defines el importe.</p>
+  <div id="wallet-journal" class="wallet-journal"></div>
+  <details class="wallet-evaluation"><summary>Evaluación y límites de la muestra</summary><p id="wallet-metrics"></p><div id="wallet-comparison"></div><p class="nota-suave">Brier compara el vector de probabilidades con el resultado; menor es mejor. Se separan confirmaciones automáticas y manuales. Una muestra pequeña o una racha positiva no demuestra una ventaja sostenida.</p></details>
+  <details class="wallet-help"><summary>Cómo se guarda y confirma</summary><p>El registro es privado y se guarda en este navegador y esta dirección web. No se sincroniza entre equipos ni se publica. Descarga una copia antes de borrar datos del navegador o cambiar de dirección.</p><p>El importe queda reservado al registrar. La ganancia se cuenta al confirmar el resultado. Una anulación devuelve el importe sin ganancia. Cuotas, probabilidades e importes originales no se editan.</p><p>Se buscan confirmaciones verificadas al cargar cada deporte. Si falta cobertura, puedes confirmar después del inicio indicando una fuente y comprobando que terminó. Esta simulación usa resultados deportivos; no reproduce las reglas de liquidación de Betano.</p></details>
+</section>
 <section id="view-combos" class="view" hidden>
   <h2>Combinadas de cuotas bajas</h2>
   <p class="nota-suave">Una cuota baja no garantiza el resultado. Si falla una selección, pierde la combinada.</p>
@@ -141,7 +159,7 @@
   <p class="nota-suave">Se guarda la primera selección válida antes del inicio. Confirmación sujeta a fuentes verificadas.</p>
   <p id="results-summary" class="status-barra"></p>
   <div id="results-evaluation"></div>
-  
+
   <section class="tarjeta evaluation-panel">
     <h3>Evaluación por liga y modelo</h3>
     <div class="toolbar">
@@ -187,11 +205,32 @@
   </div>
 </section>
 
+<details class="data-help"><summary>Datos y actualización</summary><button type="button" data-tab="status" class="secondary" aria-pressed="false">Estado de capturas</button><p><a id="mobile-source" href="https://www.betanosports.com/sport/futbol/" target="_blank" rel="noopener noreferrer">Consultar este deporte en Betano</a></p><p id="status" class="status-barra" role="status" aria-live="polite">Cargando datos…</p><p>Las cuotas se capturan desde el PC cada 25 minutos. Las recomendaciones requieren una captura de hasta 30 minutos. Las probabilidades de mercado no son predicciones independientes.</p><details id="install-help" class="dialog-detail" hidden><summary>Instalar en el celular o computador</summary><button id="install-app" class="secondary" hidden>Instalar app</button><p>Android y Chrome/Edge: usa Instalar app o el menú del navegador → Instalar aplicación. iPhone/iPad: Safari → Compartir → Añadir a pantalla de inicio. Abre primero la página con internet para guardar las disciplinas activas.</p><p id="install-status" role="status"></p><p>Sin conexión puedes consultar la última publicación guardada. Las cuotas se actualizan desde el PC; instalar la app no ejecuta el scraper en el celular.</p></details></details>
 <footer>
   Modelo experimental con fines informativos. No incorpora lesiones ni alineaciones. Las probabilidades provienen de las cuotas de Betano o modelos matemáticos Poisson locales. Juega con responsabilidad.
 </footer>
 </main>
 
+<dialog id="simulation-dialog" aria-labelledby="simulation-title">
+  <form id="simulation-form">
+    <div class="dialog-head"><div><h2 id="simulation-title">Registrar simulación</h2><p id="simulation-event" class="nota-suave"></p></div><button id="simulation-cancel" class="secondary" type="button">Cerrar</button></div>
+    <label for="simulation-side">Selección individual</label><select id="simulation-side" required></select>
+    <p id="simulation-evidence" class="nota-suave"></p>
+    <label for="simulation-stake">Importe ficticio · pesos chilenos</label><input id="simulation-stake" type="number" inputmode="numeric" min="1" step="1" required autocomplete="off" aria-describedby="simulation-balance simulation-return">
+    <p id="simulation-balance" class="nota-suave"></p><p id="simulation-return" class="nota-suave">Introduce un importe para ver el resultado posible.</p>
+    <p id="simulation-error" class="wallet-error" role="alert" hidden></p><button id="simulation-submit" class="primario" type="submit">Registrar con saldo ficticio</button>
+  </form>
+</dialog>
+<dialog id="simulation-result-dialog" aria-labelledby="simulation-result-title">
+  <form id="simulation-result-form">
+    <h2 id="simulation-result-title">Confirmar resultado simulado</h2><p id="simulation-result-event" class="nota-suave"></p>
+    <label for="simulation-result-side">Resultado final del mercado</label><select id="simulation-result-side" required></select>
+    <label for="simulation-result-source">Fuente del resultado o anulación</label><input id="simulation-result-source" type="url" placeholder="https://…" required>
+    <p><label><input id="simulation-result-final" type="checkbox" required> Comprobé que el resultado es final o que el mercado fue anulado.</label></p>
+    <p id="simulation-result-error" class="wallet-error" role="alert" hidden></p><div class="toolbar"><button id="simulation-result-submit" type="submit" class="primario">Confirmar resultado</button><button id="simulation-result-cancel" type="button" class="secondary">Cancelar</button></div>
+  </form>
+</dialog>
+<dialog id="wallet-import-dialog" aria-labelledby="wallet-import-title"><h2 id="wallet-import-title">Restaurar copia privada</h2><p id="wallet-import-description"></p><p>Reemplaza la cartera de este navegador. Descarga primero tu copia actual si quieres conservarla.</p><div class="toolbar"><button id="wallet-import-backup" type="button" class="secondary">Descargar cartera actual</button><button id="wallet-import-confirm" type="button" class="primario">Reemplazar con la copia</button><button id="wallet-import-cancel" type="button" class="secondary">Cancelar</button></div></dialog>
 <dialog id="result-dialog" aria-labelledby="result-title">
   <form id="result-form">
     <h2 id="result-title">Confirmar resultado</h2>
@@ -215,8 +254,8 @@
 <dialog id="team-dialog" aria-labelledby="team-title">
   <div class="dialog-head">
     <div>
-      <span id="team-basis" class="eyebrow"></span>
       <h2 id="team-title"></h2>
+      <span id="team-basis" class="nota-suave"></span>
       <p id="team-date" class="nota-suave"></p>
     </div>
     <button id="close-analysis" class="secondary" aria-label="Cerrar análisis">Cerrar ×</button>

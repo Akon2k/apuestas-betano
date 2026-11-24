@@ -2,6 +2,7 @@
 const token=document.querySelector('meta[name="panel-token"]').content;
 const $=id=>document.getElementById(id);
 const staticMode=Boolean(document.querySelector('meta[name="panel-static"]'));
+if(staticMode)$('refresh').textContent='Cargar publicación';
 let rows=[],analyses=[],combos=[],comboQuery='',signature=null,selectedEvent=null;
 let available={},refreshState={running:false};
 let activeSport=document.querySelector('meta[name="panel-sport"]').content;
@@ -10,7 +11,7 @@ const sportCatalog=JSON.parse($('sport-catalog').textContent);
 const sportNames=Object.fromEntries(Object.entries(sportCatalog).map(([id,info])=>[id,info.name]));
 for(const [id,info] of Object.entries(sportCatalog)){
  const option=element('option',info.name+(info.supported?'':' · catálogo'));option.value=id;$('sport-select').append(option);
- const button=element('button');button.dataset.sport=id;button.setAttribute('aria-pressed','false');button.append(element('strong',info.name),element('small',info.supported?'En vivo':'Catálogo'));document.querySelector('.sport-tabs').append(button);
+ const button=element('button');button.dataset.sport=id;button.setAttribute('aria-pressed','false');button.append(element('strong',info.name));document.querySelector('.sport-tabs').append(button);
 }
 const sides=()=>sportCatalog[activeSport].outcomes===3?['1','X','2']:['1','2'];
 const percent=n=>(n*100).toFixed(1)+' %';
@@ -34,9 +35,11 @@ function render(){
   const odds=element('td');const oddsList=element('div',null,'odds');for(const side of sides()){const r=group.find(r=>r.selection===side);const pill=element('span',null,'odd');pill.append(element('small',side),document.createTextNode(r?Number(r.odds).toFixed(2):'—'));oddsList.append(pill);}odds.append(oddsList);tr.append(odds);
   const favorite=element('td');favorite.append(element('span',a.winner,'match-name'),element('small',percent(a.probability),'subline'));tr.append(favorite);
   const advice=element('td');advice.append(element('span',shortAdvice(a),a.status==='value'?'positive':null),element('small',labelBasis(a),'subline'));if(a.status==='value')advice.append(element('small',`Cuota ${a.pick_odds.toFixed(2)} · VE ${percent(a.expected_value)}`,'subline'));tr.append(advice);
-  const action=element('td');const button=element('button',a.historical||a.statistics?.available?(activeSport==='tennis'?'Analizar jugadores':'Analizar equipos'):'Ver disponibilidad','row-action');button.onclick=()=>openAnalysis(a.event_id);action.append(button);tr.append(action);body.append(tr);
+  const action=element('td');const button=element('button',a.historical||a.statistics?.available?(activeSport==='tennis'?'Analizar jugadores':'Analizar equipos'):'Ver disponibilidad','row-action');button.onclick=()=>openAnalysis(a.event_id);action.append(button);
+  const simulate=element('button','Simular','row-action simulation-action');simulate.type='button';simulate.disabled=a.stale||a.expired||a.virtual;simulate.title=simulate.disabled?'Requiere un partido futuro y cuotas vigentes.':'Registrar con saldo ficticio';simulate.onclick=()=>window.Wallet.open(a,group);action.append(simulate);
+  tr.append(action);for(const [i,cell] of [...tr.children].entries()){cell.dataset.label=['Partido','Inicio · Chile','Cuotas','Más probable','Selección','Análisis'][i];cell.setAttribute('role','cell');}tr.setAttribute('role','row');body.append(tr);
  }
- if(!body.children.length){const tr=element('tr');const td=element('td',!sportCatalog[activeSport].supported?'Esta categoría está en el catálogo. Su captura aún no está adaptada; consulta Abrir en Betano.':rows.length?'No hay partidos con estos filtros.':$('day').value==='today'||$('day').value==='today-tomorrow'?'No hay partidos de hoy o mañana sin comenzar en la captura. Actualiza los datos o selecciona Todos los capturados.':'Todavía no hay cuotas. Pulsa Actualizar datos.','empty');td.colSpan=6;tr.append(td);body.append(tr);}
+ if(!body.children.length){const tr=element('tr');const td=element('td',!sportCatalog[activeSport].supported?'Esta categoría está en el catálogo. Su captura aún no está adaptada; consulta Abrir en Betano.':rows.length?'No hay partidos con estos filtros.':$('day').value==='today'||$('day').value==='today-tomorrow'?'No hay partidos de hoy o mañana sin comenzar en la captura. Actualiza los datos o selecciona Todos los capturados.':'Todavía no hay cuotas. Pulsa Actualizar datos.','empty');td.colSpan=6;tr.append(td);for(const [i,cell] of [...tr.children].entries()){cell.dataset.label=['Partido','Inicio · Chile','Cuotas','Más probable','Selección','Análisis'][i];cell.setAttribute('role','cell');}tr.setAttribute('role','row');body.append(tr);}
  $('match-count').textContent=`${visible.length} partidos visibles · análisis y fuentes disponibles en cada fila.`;
 }
 function profileCard(name,profile){
@@ -142,19 +145,26 @@ async function load(){
  try{
   let data;if(staticMode){data=await window.staticData(requestedSport,requestedDay);}else{const response=await fetch('/api/data'+(comboQuery||'?')+(comboQuery?'&':'')+'sport='+requestedSport+'&day='+requestedDay);if(!response.ok)throw new Error();data=await response.json();}if(requestedSport!==activeSport||requestedDay!==$('day').value)return;rows=data.rows;analyses=data.analysis||[];combos=data.combinations||[];available=data.availability||{};refreshState=data;renderActivity();renderUpcoming();
   $('refresh').disabled=!sportCatalog[activeSport].supported||data.running;$('refresh').textContent=data.running?'Actualizando…':'Actualizar datos';$('status').textContent=data.message;$('status').classList.toggle('error',data.refresh_status==='error');
-  if(staticMode){$('refresh').disabled=false;$('refresh').textContent='Cargar última publicación';}
+  if(staticMode){$('refresh').disabled=false;$('refresh').textContent='Cargar publicación';}
+  $('load-error').hidden=true;window.Wallet?.consume(data,activeSport);
   const next=JSON.stringify([rows,analyses,combos,available,data.history,data.tracking,data.sport_status]);if(next!==signature){render();renderCombos();window.renderInsights(data);if($('team-dialog').open)renderAnalysis();signature=next;}
- }catch{if(requestedSport!==activeSport||requestedDay!==$('day').value)return;$('status').textContent=staticMode?'No se pudo cargar la publicación. Revisa la conexión y vuelve a intentarlo.':'No se pudo conectar al panel. Vuelve a abrir Abrir Betano.';$('status').classList.add('error');refreshState={running:false};renderActivity();}
+ }catch{if(requestedSport!==activeSport||requestedDay!==$('day').value)return;$('status').textContent=staticMode?'No se pudo cargar la publicación. Revisa la conexión y vuelve a intentarlo.':'No se pudo conectar al panel. Vuelve a abrir Abrir Betano.';$('status').classList.add('error');$('load-error').textContent=$('status').textContent;$('load-error').hidden=false;refreshState={running:false};renderActivity();}
 }
 async function post(path){const response=await fetch(path,{method:'POST',headers:{'X-Panel-Token':token}});if(!response.ok)throw new Error();await load();}
 $('refresh').onclick=async()=>{if(staticMode){window.clearStaticData();if('serviceWorker' in navigator){const r=await navigator.serviceWorker.getRegistration();if(r)await r.update();}await load();return;}$('refresh').disabled=true;try{await post('/api/refresh?sport='+activeSport);}catch{$('status').textContent='No se pudo iniciar la actualización.';$('refresh').disabled=false;}};
 $('combo-build').onclick=async()=>{const minimum=Number($('combo-min').value),maximum=Number($('combo-max').value);if(!Number.isFinite(minimum)||!Number.isFinite(maximum)||minimum<1.5||maximum<minimum||maximum>10){$('combo-status').textContent='El mínimo debe ser al menos 1,50; el máximo debe ser mayor o igual al mínimo y hasta 10.';return;}comboQuery='?'+new URLSearchParams({combo_min:minimum,combo_max:maximum,combo_leg:$('combo-leg').value,combo_legs:$('combo-legs').value});$('combo-build').disabled=true;await load();$('combo-build').disabled=false;};
-for(const button of document.querySelectorAll('[data-tab]'))button.onclick=()=>{for(const tab of document.querySelectorAll('[data-tab]')){const active=tab===button;tab.classList.toggle('active',active);tab.setAttribute('aria-pressed',String(active));$('view-'+tab.dataset.tab).hidden=!active;}};
+window.selectView=function(name){
+ for(const tab of document.querySelectorAll('[data-tab]')){const active=tab.dataset.tab===name;tab.classList.toggle('active',active);tab.setAttribute('aria-pressed',String(active));$('view-'+tab.dataset.tab).hidden=!active;}
+ document.body.dataset.view=name;$('page-title').textContent=name==='wallet'?'ApuestasBetano':sportNames[activeSport]+' · cuotas';
+ const url=new URL(location.href);url.searchParams.set('view',name);history.replaceState(null,'',url);
+ if(name==='wallet')window.Wallet?.refresh();
+};
+for(const button of document.querySelectorAll('[data-tab]'))button.onclick=()=>window.selectView(button.dataset.tab);
 $('close-analysis').onclick=()=>$('team-dialog').close();$('team-dialog').addEventListener('click',event=>{if(event.target===$('team-dialog')){const rect=$('team-dialog').getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)$('team-dialog').close();}});
 function sportLabels(){
- const info=sportCatalog[activeSport];$('sport-select').value=activeSport;$('sport-source').href=info.url;$('catalog-status').textContent=info.supported?'Captura de mercado principal · cobertura de la página cargada':'Catálogo: mercado aún no adaptado';
+ const info=sportCatalog[activeSport];$('sport-select').value=activeSport;$('sport-source').href=info.url;$('mobile-source').href=info.url;$('catalog-status').textContent=info.supported?'Captura de mercado principal · cobertura de la página cargada':'Catálogo: mercado aún no adaptado';
  const football=activeSport==='football',tennis=activeSport==='tennis',name=sportNames[activeSport];
- $('page-title').textContent=name+' · Partidos y análisis';document.title='ApuestasBetano · '+name;
+ $('page-title').textContent=name+' · cuotas';document.title='ApuestasBetano · '+name;
  for(const button of document.querySelectorAll('[data-sport]')){const active=button.dataset.sport===activeSport;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}
  $('sport-name').textContent='BETANO CHILE · '+name.toUpperCase();$('search').placeholder=tennis?'Buscar jugador o torneo…':'Buscar equipo o campeonato…';
  $('odds-title').textContent=sides().length===3?'CUOTAS · 1 / X / 2':tennis?'CUOTAS · JUGADOR 1 / 2':'CUOTAS · EQUIPO 1 / 2';
@@ -179,4 +189,4 @@ $('show-upcoming').onclick=()=>{$('day').value='upcoming';$('day').dispatchEvent
 $('day').onchange=()=>{rows=[];analyses=[];combos=[];available={};refreshState={running:false};renderActivity();renderUpcoming();window.renderInsights({});signature=null;selectedEvent=null;$('team-dialog').close();sportLabels();render();renderCombos();load();};
 $('download').addEventListener('click',event=>{if(!staticMode)return;event.preventDefault();const fields=['event','competition','start_utc','market','selection','odds','observed_utc'];const csv=[fields,...rows.map(r=>fields.map(k=>r[k]||''))].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const a=element('a');a.href=url;a.download='cuotas-'+activeSport+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);sportLabels();load();setInterval(load,staticMode?60000:5000);setInterval(renderActivity,1000);
-const themeBtn=$('theme-toggle');if(themeBtn){const isDark=()=>document.documentElement.getAttribute('data-tema')==='oscuro'||(!document.documentElement.getAttribute('data-tema')&&window.matchMedia('(prefers-color-scheme: dark)').matches);const updateTheme=()=>{themeBtn.textContent=isDark()?'☀️ Modo claro':'🌙 Modo oscuro';};themeBtn.onclick=()=>{const next=isDark()?'claro':'oscuro';document.documentElement.setAttribute('data-tema',next);localStorage.setItem('betano_tema',next);updateTheme();};updateTheme();}
+const themeBtn=$('theme-toggle');if(themeBtn){const isDark=()=>document.documentElement.getAttribute('data-tema')==='oscuro'||(!document.documentElement.getAttribute('data-tema')&&window.matchMedia('(prefers-color-scheme: dark)').matches);const updateTheme=()=>{themeBtn.textContent=isDark()?'Tema claro':'Tema oscuro';};themeBtn.onclick=()=>{const next=isDark()?'claro':'oscuro';document.documentElement.setAttribute('data-tema',next);localStorage.setItem('betano_tema',next);updateTheme();};updateTheme();}
